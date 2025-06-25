@@ -93,7 +93,11 @@ export const loginUser = async (req: Request, res: Response) => {
             expiresIn: '24h',
         });
 
-        res.json({ token, cod_grupo: userDb.cod_grupo });
+        res.json({
+            token,
+            cod_grupo: userDb.cod_grupo,
+            cod_usuario: userDb.cod_usuario,
+        });
     } catch (err) {
         res.status(500).json({ msg: 'Erro no servidor', error: (err as Error).message });
     }
