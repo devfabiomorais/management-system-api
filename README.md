@@ -34,13 +34,10 @@ Este projeto gerencia dados da aplicação via rotas REST, com foco em performan
     <img src="https://cdn.iconscout.com/icon/free/png-256/typescript-1174965.png" alt="TypeScript" width="32" height="32" />
   </a>
   <a href="https://expressjs.com/" target="_blank" rel="noreferrer">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/6/64/Expressjs.png" alt="Express" width="32" height="32" />
+    <img src="https://img.icons8.com/color/512/express-js.png" alt="Express" width="32" height="32" />
   </a>
   <a href="https://www.prisma.io/" target="_blank" rel="noreferrer">
     <img src="https://avatars.githubusercontent.com/u/17219288?s=200&v=4" alt="Prisma" width="32" height="32" />
-  </a>
-  <a href="https://vercel.com/" target="_blank" rel="noreferrer">
-    <img src="https://raw.githubusercontent.com/github/explore/main/topics/vercel/vercel.png" alt="Vercel" width="32" height="32" />
   </a>
 </p>
 
