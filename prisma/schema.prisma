@@ -1,0 +1,1085 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model db_movimentacoes {
+  cod_movimentacao Int               @id @default(autoincrement())
+  cod_item         Int?
+  cod_un           Int?
+  cod_local_item   Int?
+  lote             String?           @db.VarChar(45)
+  quantidade       Decimal?          @db.Decimal(30, 5)
+  observacoes      String?           @db.VarChar(255)
+  tipo             TipoMovimentacao?
+  cod_usuario      Int?
+  dt_hr_criacao    DateTime?         @db.DateTime
+  situacao         Situacao          @default(Ativo)
+
+  db_itens           db_itens?           @relation("ItemMovimentacoes", fields: [cod_item], references: [cod_item])
+  db_unidades_medida db_unidades_medida? @relation("UnidadeMedidaMovimentacoes", fields: [cod_un], references: [cod_un])
+  db_locais_itens    db_locais_itens?    @relation("LocalItemMovimentacoes", fields: [cod_local_item], references: [cod_local_item])
+  db_usuarios        db_usuarios?        @relation("UsuarioMovimentacoes", fields: [cod_usuario], references: [cod_usuario])
+
+  @@index([cod_item], name: "idx_mov_item_idx")
+  @@index([cod_un], name: "idx_mov_unmed_idx")
+  @@index([cod_local_item], name: "idx_mov_local_idx")
+  @@index([cod_usuario], name: "idx_mov_criador_idx")
+}
+
+enum TipoMovimentacao {
+  Entrada
+  Saida
+}
+
+model db_locais_itens {
+  cod_local_item  Int       @id @default(autoincrement())
+  cod_item        Int?      @unique @map("cod_item")
+  cod_un          Int?      @map("cod_un")
+  cod_localizacao Int?      @map("cod_localizacao")
+  cod_usuario     Int?      @map("cod_usuario")
+  dt_hr_criacao   DateTime? @map("dt_hr_criacao")
+  situacao        Situacao  @default(Ativo)
+
+  // Relacionamentos
+  db_itens           db_itens?           @relation(fields: [cod_item], references: [cod_item])
+  db_unidades_medida db_unidades_medida? @relation(fields: [cod_un], references: [cod_un])
+  db_localizacoes    db_localizacoes?    @relation(fields: [cod_localizacao], references: [cod_localizacao])
+  db_usuarios        db_usuarios?        @relation(fields: [cod_usuario], references: [cod_usuario])
+  db_movimentacoes   db_movimentacoes[]  @relation("LocalItemMovimentacoes")
+
+  @@map("db_locais_itens")
+}
+
+model db_localizacoes {
+  cod_localizacao Int       @id @default(autoincrement())
+  cod_deposito    String?   @db.VarChar(15)
+  capacidade      Decimal?  @db.Decimal(30, 5)
+  cod_un          Int?
+  cod_rua         String?   @db.VarChar(30)
+  cod_coluna      String?   @db.VarChar(30)
+  cod_nivel       String?   @db.VarChar(30)
+  cod_usuario     Int?
+  dt_hr_criacao   DateTime?
+  situacao        Situacao  @default(Ativo)
+
+  // Relacionamentos
+  deposito        db_depositos?       @relation(fields: [cod_deposito], references: [cod_deposito])
+  unidade_medida  db_unidades_medida? @relation(fields: [cod_un], references: [cod_un])
+  usuario         db_usuarios?        @relation(fields: [cod_usuario], references: [cod_usuario])
+  db_locais_itens db_locais_itens[]
+
+  @@index([cod_deposito], name: "idx_localizacoes_deposito_idx")
+  @@index([cod_un], name: "idx_localizacoes_unmed_idx")
+  @@index([cod_usuario], name: "idx_localizacoes_criador_idx")
+}
+
+model db_depositos {
+  id           Int      @id @default(autoincrement()) // novo ID interno
+  cod_deposito String   @unique // código lógico visível
+  descricao    String?  @db.VarChar(45)
+  cod_estabel  Int?
+  tipo         String   @default("Manutenção") @db.VarChar(20)
+  cod_usuario  Int?
+  situacao     Situacao @default(Ativo)
+
+  dt_hr_criacao DateTime?
+
+  // Relacionamentos (Foreign Keys)
+  estabelecimento db_estabelecimentos? @relation(fields: [cod_estabel], references: [cod_estabelecimento])
+  usuario         db_usuarios?         @relation(fields: [cod_usuario], references: [cod_usuario])
+  db_localizacoes db_localizacoes[]
+
+  @@index([cod_estabel], name: "idx_depositos_estabel_idx")
+  @@index([cod_usuario], name: "idx_depositos_criador_idx")
+}
+
+model db_nfs_servicos {
+  cod_nf_servico         Int       @id @default(autoincrement()) @map("cod_nf_servico")
+  numero_rps             Int?
+  serie                  Int?
+  cod_natureza_operacao  Int?
+  dt_emissao             DateTime? @db.Date
+  hr_emissao             DateTime? @map("hr_emissao") @db.Time(0)
+  cod_entidade           Int?
+  telefone_ent           String?   @db.VarChar(15)
+  celular_ent            String?   @db.VarChar(15)
+  email_ent              String?   @db.VarChar(100)
+  cnpj_cpf_ent           String?   @db.VarChar(20)
+  razao_social_ent       String?   @db.VarChar(100)
+  tipo_contribuinte_ent  String?   @db.VarChar(45)
+  insc_estadual_ent      String?   @db.VarChar(45)
+  insc_municipal_ent     String?   @db.VarChar(45)
+  cep_ent                String?   @db.VarChar(20)
+  logradouro_ent         String?   @db.VarChar(100)
+  numero_ent             Int?
+  estado_ent             String?   @db.VarChar(2)
+  bairro_ent             String?   @db.VarChar(45)
+  cidade_ent             String?   @db.VarChar(55)
+  descricao_servico      String?   @db.Text
+  item_lista_servico     String?   @db.VarChar(55)
+  total_icms             Decimal?  @db.Decimal(30, 5)
+  aliquota_icms          Decimal?  @db.Decimal(30, 5)
+  total_cofins           Decimal?  @db.Decimal(30, 5)
+  aliquota_cofins        Decimal?  @db.Decimal(30, 5)
+  total_pis              Decimal?  @db.Decimal(30, 5)
+  aliquota_pis           Decimal?  @db.Decimal(30, 5)
+  total_csll             Decimal?  @db.Decimal(30, 5)
+  aliquota_csll          Decimal?  @db.Decimal(30, 5)
+  total_ir               Decimal?  @db.Decimal(30, 5)
+  aliquota_ir            Decimal?  @db.Decimal(30, 5)
+  total_inss             Decimal?  @db.Decimal(30, 5)
+  aliquota_inss          Decimal?  @db.Decimal(30, 5)
+  observacoes            String?   @db.VarChar(255)
+  informacoes_adicionais String?   @db.VarChar(255)
+  descontar_impostos     SimNao?
+  total_nf               Decimal?  @db.Decimal(30, 5)
+  valor_servicos         Decimal?  @db.Decimal(30, 5)
+  valor_deducoes         Decimal?  @db.Decimal(30, 5)
+  valor_iss              Decimal?  @db.Decimal(30, 5)
+  aliquota               Decimal?  @db.Decimal(30, 5)
+  descontos              Decimal?  @db.Decimal(30, 5)
+  base_calculo           Decimal?  @db.Decimal(30, 5)
+  iss_retido             SimNao?
+  situacao               Situacao  @default(Ativo)
+  venc_fatura            DateTime? @db.Date
+
+  // Chave estrangeira e relação
+  cod_atividade_servico Int?
+  atividadeServico      db_atividades_servicos? @relation(fields: [cod_atividade_servico], references: [cod_atividade_servico])
+
+  @@map("db_nfs_servicos")
+}
+
+model db_nfs_produtos {
+  cod_nf_produto             Int               @id @default(autoincrement())
+  numero_nf                  Int?
+  serie                      Int?
+  cod_natureza_operacao      Int?
+  tipo                       TipoEntradaSaida?
+  dt_emissao                 DateTime?         @db.Date
+  hr_emissao                 DateTime?         @db.Time(0)
+  dt_entrada_saida           DateTime?         @db.Date
+  hr_entrada_saida           DateTime?         @db.Time(0)
+  finalidade_emissao         String?           @db.VarChar(100)
+  forma_emissao              String?           @db.VarChar(100)
+  destinacao_operacao        String?           @db.VarChar(100)
+  tipo_atendimento           String?           @db.VarChar(100)
+  cod_entidade               Int?
+  tipo_en                    TipoEntidade?
+  cnpj_cpf_ent               String?           @db.VarChar(20)
+  razao_social_ent           String?           @db.VarChar(100)
+  tipo_contribuinte_ent      String?           @db.VarChar(45)
+  insc_estadual_ent          String?           @db.VarChar(45)
+  insc_municipal_ent         String?           @db.VarChar(45)
+  cep_ent                    String?           @db.VarChar(20)
+  logradouro_ent             String?           @db.VarChar(100)
+  numero_ent                 Int?
+  estado_ent                 String?           @db.VarChar(2)
+  bairro_ent                 String?           @db.VarChar(45)
+  cidade_ent                 String?           @db.VarChar(55)
+  cod_transportadora         Int?
+  cnpj_cpf_transp            String?           @db.VarChar(20)
+  razao_social_transp        String?           @db.VarChar(100)
+  tipo_contribuinte_transp   String?           @db.VarChar(45)
+  insc_estadual_transp       String?           @db.VarChar(45)
+  insc_municipal_transp      String?           @db.VarChar(45)
+  cep_transp                 String?           @db.VarChar(20)
+  logradouro_transp          String?           @db.VarChar(100)
+  numero_transp              Int?
+  estado_transp              String?           @db.VarChar(2)
+  bairro_transp              String?           @db.VarChar(45)
+  cidade_transp              String?           @db.VarChar(45)
+  estado_uf                  String?           @db.VarChar(2)
+  placa_veiculo              String?           @db.VarChar(15)
+  reg_nac_trans_carga        String?           @db.VarChar(45)
+  modalidade                 String?           @db.VarChar(100)
+  total_icms                 Decimal?          @db.Decimal(30, 5)
+  total_pis                  Decimal?          @db.Decimal(30, 5)
+  total_cofins               Decimal?          @db.Decimal(30, 5)
+  total_ipi                  Decimal?          @db.Decimal(30, 5)
+  total_produtos             Decimal?          @db.Decimal(30, 5)
+  total_frete                Decimal?          @db.Decimal(30, 5)
+  total_nf                   Decimal?          @db.Decimal(30, 5)
+  impostos_federais          Decimal?          @db.Decimal(30, 5)
+  impostos_estaduais         Decimal?          @db.Decimal(30, 5)
+  impostos_municipais        Decimal?          @db.Decimal(30, 5)
+  total_impostos             Decimal?          @db.Decimal(30, 5)
+  informacoes_complementares String?           @db.VarChar(255)
+  informacoes_fisco          String?           @db.VarChar(255)
+  situacao                   Situacao          @default(Ativo)
+
+  // Relacionamento com os serviços da nota fiscal
+  produtos db_produtos_nf[]
+}
+
+model db_produtos_nf {
+  cod_produto_nf Int      @id @default(autoincrement())
+  cod_item       Int?
+  ncm            String?  @db.VarChar(45)
+  cfop           String?  @db.VarChar(45)
+  quantidade     Decimal? @db.Decimal(30, 5)
+  valor_unitario Decimal? @db.Decimal(30, 5)
+  valor_total    Decimal? @db.Decimal(30, 5)
+  cod_nf_produto Int?
+
+  item       db_itens?        @relation(fields: [cod_item], references: [cod_item], onDelete: NoAction, onUpdate: NoAction)
+  nf_produto db_nfs_produtos? @relation(fields: [cod_nf_produto], references: [cod_nf_produto], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([cod_item], name: "idx_produtos_nf_item_idx")
+  @@index([cod_nf_produto], name: "idx_nf_produtos_idx")
+}
+
+enum TipoEntradaSaida {
+  Entrada
+  Saída
+}
+
+enum TipoEntidade {
+  Cliente
+  Fornecedor
+}
+
+model db_estabelecimentos_atividades {
+  cod_estabel_atividade Int  @id @default(autoincrement())
+  cod_estabel           Int?
+  cod_atividade_servico Int?
+
+  db_estabelecimentos    db_estabelecimentos?    @relation(fields: [cod_estabel], references: [cod_estabelecimento], onDelete: NoAction, onUpdate: NoAction, map: "idx_cod_estabel_ea")
+  db_atividades_servicos db_atividades_servicos? @relation(fields: [cod_atividade_servico], references: [cod_atividade_servico], onDelete: NoAction, onUpdate: NoAction, map: "idx_cod_atividade_ea")
+
+  @@index([cod_estabel], map: "idx_cod_estabel_idx_ea")
+  @@index([cod_atividade_servico], map: "idx_cod_atividade_idx_ea")
+  @@map("db_estabelecimentos_atividades")
+}
+
+model db_atividades_servicos {
+  cod_atividade_servico          Int                              @id @default(autoincrement())
+  cod_tributacao                 String?                          @db.VarChar(45)
+  cnae                           String?                          @db.VarChar(45)
+  descricao                      String?                          @db.VarChar(100)
+  iss                            Decimal?                         @db.Decimal(30, 5)
+  cofins                         Decimal?                         @db.Decimal(30, 5)
+  pis                            Decimal?                         @db.Decimal(30, 5)
+  csll                           Decimal?                         @db.Decimal(30, 5)
+  ir                             Decimal?                         @db.Decimal(30, 5)
+  inss                           Decimal?                         @db.Decimal(30, 5)
+  desconta_imp_tot               SimNao                           @default(Sim)
+  desconta_ded_tot               SimNao                           @default(Sim)
+  servico_const_civil            SimNao                           @default(Sim)
+  situacao                       Situacao                         @default(Ativo)
+  db_estabelecimentos_atividades db_estabelecimentos_atividades[] @relation(map: "idx_cod_atividade_ea")
+  db_nfs_servicos                db_nfs_servicos[]
+
+  @@map("db_atividades_servicos")
+}
+
+model db_estabelecimentos_natureza {
+  cod_estabel_natureza  Int  @id @default(autoincrement())
+  cod_estabel           Int?
+  cod_natureza_operacao Int?
+
+  db_estabelecimentos   db_estabelecimentos?   @relation(fields: [cod_estabel], references: [cod_estabelecimento], onDelete: NoAction, onUpdate: NoAction, map: "idx_cod_estabel_en")
+  db_naturezas_operacao db_naturezas_operacao? @relation(fields: [cod_natureza_operacao], references: [cod_natureza_operacao], onDelete: NoAction, onUpdate: NoAction, map: "idx_cod_natureza_en")
+
+  @@index([cod_estabel], map: "idx_cod_estabel_idx_en")
+  @@index([cod_natureza_operacao], map: "idx_cod_natureza_idx_en")
+}
+
+model db_grupos_tributacao {
+  cod_grupo_tributacao Int       @id @default(autoincrement())
+  nome                 String?   @db.VarChar(50)
+  descricao            String?   @db.VarChar(255)
+  dt_cadastro          DateTime? @db.DateTime(0)
+  situacao             Situacao  @default(Ativo)
+
+  usuario_cadastro Int?
+  usuario          db_usuarios? @relation(fields: [usuario_cadastro], references: [cod_usuario])
+
+  regras             db_regras_grupo_tributacao[]
+  naturezas_operacao db_naturezas_operacao[]
+}
+
+model db_regras_grupo_tributacao {
+  cod_regra_grupo      Int                      @id @default(autoincrement())
+  cod_grupo_tributacao Int?
+  tipo                 TipoRegraTributaria?
+  aliquota             Decimal?                 @db.Decimal(30, 5)
+  cst_csosn            String?                  @db.VarChar(30)
+  observacoes          String?                  @db.VarChar(255)
+  grupo                db_grupos_tributacao?    @relation(fields: [cod_grupo_tributacao], references: [cod_grupo_tributacao])
+  estados              db_estados_regra_grupo[]
+
+  @@index([cod_grupo_tributacao], name: "idx_regra_grupo_tributacao_idx")
+}
+
+model db_estados_regra_grupo {
+  cod_estado_regra Int                         @id @default(autoincrement())
+  uf               String?                     @db.VarChar(2)
+  cod_regra_grupo  Int?
+  regra_grupo      db_regras_grupo_tributacao? @relation(fields: [cod_regra_grupo], references: [cod_regra_grupo])
+
+  @@index([cod_regra_grupo], name: "idx_estado_regra_grupo_idx")
+}
+
+model db_cfops {
+  cod_cfop       String             @id @db.VarChar(30)
+  descricao      String?            @db.VarChar(255)
+  tipo_operacao  TipoOperacaoCfop?  @default(Entrada)
+  origem_destino OrigemDestinoCfop? @default(Interno)
+  db_cfopcol     String?            @db.VarChar(45)
+
+  natureza_operacao_interna db_naturezas_operacao[] @relation("cfop_interno")
+  natureza_operacao_externa db_naturezas_operacao[] @relation("cfop_externo")
+}
+
+model db_naturezas_operacao {
+  cod_natureza_operacao Int           @id @default(autoincrement())
+  nome                  String?       @db.VarChar(100)
+  padrao                String?       @db.VarChar(45)
+  tipo                  TipoNatureza?
+  finalidade_emissao    String?       @db.VarChar(45)
+  tipo_agendamento      String?       @db.VarChar(45)
+  consumidor_final      SimNao?
+  observacoes           String?       @db.VarChar(255)
+  cod_grupo_tributacao  Int?
+  cod_cfop_interno      String?       @db.VarChar(30)
+  cod_cfop_externo      String?       @db.VarChar(30)
+  situacao              Situacao?     @default(Ativo)
+
+  grupo_tributacao             db_grupos_tributacao?          @relation(fields: [cod_grupo_tributacao], references: [cod_grupo_tributacao])
+  cfop_interno                 db_cfops?                      @relation("cfop_interno", fields: [cod_cfop_interno], references: [cod_cfop])
+  cfop_externo                 db_cfops?                      @relation("cfop_externo", fields: [cod_cfop_externo], references: [cod_cfop])
+  db_estabelecimentos_natureza db_estabelecimentos_natureza[] @relation(map: "idx_cod_natureza_en")
+
+  @@index([cod_grupo_tributacao], name: "idx_grupo_tributacao")
+  @@index([cod_cfop_interno], name: "idx_cfop_interno")
+  @@index([cod_cfop_externo], name: "idx_cfop_externo")
+}
+
+enum TipoRegraTributaria {
+  Estados
+  PIS
+  COFINS
+  ICMS
+  IPI
+}
+
+enum TipoNatureza {
+  Entrada
+  Saida
+}
+
+enum TipoOperacaoCfop {
+  Entrada
+  Saída
+}
+
+enum OrigemDestinoCfop {
+  Interno
+  Externo
+  Exterior
+}
+
+enum SimNao {
+  Sim
+  Não
+}
+
+model db_contas_financeiro {
+  cod_conta          Int               @id @default(autoincrement())
+  tipo_conta         TipoConta?
+  cod_fornecedor     Int?
+  cod_transportadora Int?
+  cod_cliente        Int?
+  descricao          String?           @db.VarChar(255)
+  dt_vencimento      DateTime?
+  cod_centro_custo   Int?
+  cod_conta_bancaria Int?
+  cod_plano_conta    Int?
+  pagamento_quitado  PagamentoQuitado?
+  dt_compensacao     DateTime?
+  nfe                String?           @db.VarChar(45)
+  nfse               String?           @db.VarChar(45)
+  valor_bruto        Decimal?          @db.Decimal(25, 5)
+  valor_final        Decimal?          @db.Decimal(25, 5)
+  tipo_juros         TipoValor?
+  tipo_desconto      TipoValor?
+  desconto           Decimal?          @db.Decimal(25, 5)
+  juros              Decimal?          @db.Decimal(25, 5)
+  situacao           Situacao?
+
+  db_centros_custo  db_centros_custo?  @relation(fields: [cod_centro_custo], references: [cod_centro_custo])
+  db_conta_bancaria db_conta_bancaria? @relation(fields: [cod_conta_bancaria], references: [cod_conta_bancaria])
+  db_plano_contas   db_plano_contas?   @relation(fields: [cod_plano_conta], references: [cod_plano_conta])
+
+  db_pagamentos_contas db_pagamentos_contas[]
+}
+
+enum TipoConta {
+  PAGAR
+  RECEBER
+}
+
+enum PagamentoQuitado {
+  SIM
+  NÃO
+}
+
+enum TipoValor {
+  REAL
+  PERCENTUAL
+}
+
+model db_pagamentos_contas {
+  cod_pagamento_conta Int        @id @default(autoincrement())
+  cod_conta           Int?
+  cod_forma_pagamento Int?
+  parcela             Int?
+  dt_parcela          DateTime?
+  juros               Decimal?   @db.Decimal(25, 5)
+  tipo_juros          TipoValor?
+  valor_parcela       Decimal?   @db.Decimal(25, 5)
+
+  db_contas_financeiro db_contas_financeiro? @relation(fields: [cod_conta], references: [cod_conta])
+  db_formas_pagamento  db_formas_pagamento?  @relation(fields: [cod_forma_pagamento], references: [cod_forma_pagamento])
+}
+
+model db_conta_bancaria {
+  cod_conta_bancaria  Int                   @id @default(autoincrement())
+  nome                String?               @db.VarChar(45)
+  saldo               Decimal?              @db.Decimal(25, 5)
+  dt_saldo            DateTime?             @db.Date
+  situacao            Situacao              @default(Ativo)
+  dt_cadastro         DateTime?             @db.DateTime(0)
+  db_formas_pagamento db_formas_pagamento[]
+
+  db_contas_financeiro db_contas_financeiro[]
+}
+
+model db_grupo_dre {
+  cod_grupo_dre Int     @id @default(autoincrement())
+  descricao     String? @db.VarChar(105)
+  cod_despesa   Int? // Pode ser NULL no banco
+
+  db_despesas     db_despesas?      @relation(fields: [cod_despesa], references: [cod_despesa])
+  db_plano_contas db_plano_contas[]
+
+  @@map("db_grupo_dre") // Mapeia para o nome real da tabela no banco
+}
+
+model db_despesas {
+  cod_despesa Int     @id @default(autoincrement())
+  descricao   String? @db.VarChar(45)
+
+  // Relação com db_grupo_dre
+  grupos_dre db_grupo_dre[] // Uma despesa pode ter vários grupos DRE
+
+  @@map("db_despesas")
+}
+
+model db_plano_contas {
+  cod_plano_conta     Int       @id @default(autoincrement())
+  descricao           String?   @db.VarChar(105)
+  classificacao       String?   @db.VarChar(20)
+  cod_plano_conta_mae Int?
+  cod_grupo_dre       Int?
+  situacao            Situacao  @default(Ativo)
+  dt_cadastro         DateTime? @db.DateTime(0)
+
+  // Relação com ela mesma (plano de contas mãe/filha)
+  planoContaMae db_plano_contas?  @relation("PlanoContaMae", fields: [cod_plano_conta_mae], references: [cod_plano_conta])
+  contasFilhas  db_plano_contas[] @relation("PlanoContaMae")
+
+  // Relação com grupo_dre
+  grupoDre             db_grupo_dre?          @relation(fields: [cod_grupo_dre], references: [cod_grupo_dre])
+  db_contas_financeiro db_contas_financeiro[]
+
+  @@map("db_plano_contas")
+}
+
+model db_orcamentos {
+  cod_orcamento           Int                     @id @default(autoincrement())
+  cod_responsavel         Int
+  cod_cliente             Int
+  canal_venda             canalVenda
+  data_venda              DateTime
+  prazo                   DateTime
+  cod_centro_custo        Int
+  frota                   String                  @db.VarChar(45)
+  nf_compra               String                  @db.VarChar(45)
+  cod_transportadora      Int
+  frete                   Decimal                 @db.Decimal(10, 2)
+  endereco_cliente        enderecoCliente
+  logradouro              String?                 @db.VarChar(100)
+  cidade                  String?                 @db.VarChar(100)
+  bairro                  String?                 @db.VarChar(100)
+  estado                  String?                 @db.VarChar(2)
+  complemento             String?                 @db.VarChar(45)
+  numero                  Int?
+  cep                     String?                 @db.VarChar(15)
+  observacoes_gerais      String?
+  observacoes_internas    String?
+  desconto_total          Decimal                 @db.Decimal(10, 2)
+  valor_total             Decimal                 @db.Decimal(25, 5)
+  dtCadastro              DateTime?               @db.DateTime(0)
+  situacao                SituacaoOrcamentos
+  garantia                Int?
+  tipo_garantia           TipoGarantia?
+  cod_estrutura_orcamento Int? // Chave estrangeira adicionada
+  db_estrutura_orcamento  db_estrutura_orcamento? @relation(fields: [cod_estrutura_orcamento], references: [cod_estrutura_orcamento], name: "EstruturaOrcamento")
+
+  db_pagamentos_orcamento db_pagamentos_orcamento[]
+  db_produtos_orcamento   db_produtos_orcamento[]
+  db_servicos_orcamento   db_servicos_orcamento[]
+  db_pedidos_venda        db_pedidos_venda[]
+
+  @@index([cod_responsavel], name: "idx_orc_responsavel_idx")
+  @@index([cod_cliente], name: "idx_orc_cliente_idx")
+  @@index([cod_centro_custo], name: "idx_orc_cc_idx")
+  @@index([cod_transportadora], name: "idx_orc_transp_idx")
+}
+
+enum canalVenda {
+  Presencial
+  Internet
+  Telemarketing
+}
+
+enum enderecoCliente {
+  Sim
+  Nao
+}
+
+enum TipoGarantia {
+  dias
+  meses
+  anos
+}
+
+enum SituacaoOrcamentos {
+  Pendente
+  Pedido_Gerado
+  Cancelado
+}
+
+model db_servicos_estrutura_orcamento {
+  cod_serv_es_orcamento   Int            @id @default(autoincrement())
+  cod_servico             Int?
+  valor_unitario          Decimal?
+  valor_desconto          Decimal?
+  valor_total             Decimal?
+  quantidade              Decimal?
+  tipo_desconto           tipo_desconto?
+  cod_estrutura_orcamento Int?
+
+  db_estrutura_orcamento db_estrutura_orcamento? @relation(fields: [cod_estrutura_orcamento], references: [cod_estrutura_orcamento])
+  db_servicos            db_servicos?            @relation(fields: [cod_servico], references: [cod_servico])
+
+  @@index([cod_estrutura_orcamento], name: "fk_serv_es_orcto_estrutura_idx")
+  @@index([cod_servico], name: "fk_serv_es_orcto_servico_idx")
+}
+
+model db_produtos_estrutura_orcamento {
+  cod_prod_orcamento      Int            @id @default(autoincrement())
+  cod_produto             Int?
+  valor_unitario          Decimal?
+  valor_desconto          Decimal?
+  valor_total             Decimal?
+  quantidade              Decimal?
+  tipo_desconto           tipo_desconto?
+  cod_estrutura_orcamento Int?
+
+  db_estrutura_orcamento db_estrutura_orcamento? @relation(fields: [cod_estrutura_orcamento], references: [cod_estrutura_orcamento])
+  db_itens               db_itens?               @relation(fields: [cod_produto], references: [cod_item])
+
+  @@index([cod_estrutura_orcamento], name: "fk_prod_es_orcto_estrutura_idx")
+  @@index([cod_produto], name: "fk_prod_es_orcto_produto_idx")
+}
+
+model db_pedidos_venda {
+  cod_pedido_venda   Int             @id @default(autoincrement())
+  cod_orcamento      Int?
+  cod_cliente        Int?
+  dt_hr_pedido       DateTime?
+  cod_usuario_pedido Int?
+  situacao           SituacaoPedido?
+  valor_total        Decimal?        @db.Decimal(25, 5)
+  cod_nota_fiscal    Int?
+
+  // Relacionamentos
+  db_orcamentos db_orcamentos? @relation(fields: [cod_orcamento], references: [cod_orcamento])
+  db_clientes   db_clientes?   @relation(fields: [cod_cliente], references: [cod_cliente])
+  db_usuarios   db_usuarios?   @relation(fields: [cod_usuario_pedido], references: [cod_usuario])
+
+  // Índices
+  @@index([cod_orcamento])
+  @@index([cod_cliente])
+  @@index([cod_usuario_pedido])
+}
+
+// Enum de situações
+enum SituacaoPedido {
+  Pendente
+  Faturado
+  Cancelado
+}
+
+model db_estrutura_orcamento {
+  cod_estrutura_orcamento Int       @id @default(autoincrement())
+  nome                    String?
+  descricao               String?
+  dt_hr_criacao           DateTime?
+  cod_usuario_criado      Int?
+  situacao                Situacao  @default(Ativo)
+
+  db_usuarios                     db_usuarios?                      @relation(fields: [cod_usuario_criado], references: [cod_usuario])
+  db_servicos_estrutura_orcamento db_servicos_estrutura_orcamento[]
+  db_produtos_estrutura_orcamento db_produtos_estrutura_orcamento[]
+  db_orcamentos                   db_orcamentos[]                   @relation("EstruturaOrcamento")
+
+  @@index([cod_usuario_criado], name: "fk_estrutura_criador_idx")
+}
+
+enum tipo_desconto {
+  Percentual
+  Reais
+}
+
+enum TipoDesconto {
+  Percentual
+  Reais
+}
+
+model db_pagamentos_orcamento {
+  cod_pag_orcamento   Int           @id @default(autoincrement())
+  cod_orcamento       Int
+  cod_forma_pagamento Int
+  parcela             Int
+  data_parcela        DateTime
+  juros               Decimal       @db.Decimal(10, 5)
+  valorParcela        Decimal       @db.Decimal(10, 5)
+  tipo_juros          tipoJuros
+  db_orcamentos       db_orcamentos @relation(fields: [cod_orcamento], references: [cod_orcamento], onDelete: NoAction, onUpdate: NoAction, map: "idx_orc_pag_idx")
+
+  @@index([cod_orcamento], name: "idx_orc_pag_idx")
+  @@index([cod_forma_pagamento], name: "idx_pag_forma_idx")
+}
+
+enum tipoJuros {
+  Percentual
+  Reais
+}
+
+model db_formas_pagamento {
+  cod_forma_pagamento Int       @id @default(autoincrement())
+  nome                String?   @db.VarChar(45)
+  descricao           String?   @db.VarChar(255)
+  situacao            Situacao? @default(Ativo)
+  dt_cadastro         DateTime? @db.DateTime(0)
+
+  cod_conta_bancaria Int?
+  conta_bancaria     db_conta_bancaria? @relation(fields: [cod_conta_bancaria], references: [cod_conta_bancaria])
+
+  max_parcelas       Int?
+  intervalo_parcelas Int?
+
+  cod_modalidade Int?
+  modalidade     db_modalidade? @relation(fields: [cod_modalidade], references: [cod_modalidade])
+
+  db_pagamentos_contas db_pagamentos_contas[]
+}
+
+model db_modalidade {
+  cod_modalidade Int     @id @default(autoincrement())
+  descricao      String? @db.VarChar(105)
+
+  formas_pagamento db_formas_pagamento[]
+}
+
+enum Situacao {
+  Ativo
+  Inativo
+}
+
+model db_produtos_orcamento {
+  cod_prod_orcamento Int           @id @default(autoincrement())
+  cod_produto        Int
+  valor_unitario     Decimal       @db.Decimal(25, 5)
+  valor_desconto     Decimal       @db.Decimal(25, 5)
+  quantidade         Decimal       @db.Decimal(25, 5)
+  valor_total        Decimal       @db.Decimal(25, 5)
+  tipo_desconto      TipoDesconto
+  cod_orcamento      Int
+  db_orcamentos      db_orcamentos @relation(fields: [cod_orcamento], references: [cod_orcamento], onDelete: NoAction, onUpdate: NoAction, map: "idx_prod_orc_idx")
+  db_itens           db_itens?     @relation(fields: [cod_produto], references: [cod_item])
+
+  @@index([cod_produto], name: "idx_orc_prod_idx")
+  @@index([cod_orcamento], name: "idx_prod_orc_idx")
+}
+
+model db_servicos_orcamento {
+  cod_serv_orcamento Int          @id @default(autoincrement())
+  cod_servico        Int
+  valor_unitario     Decimal      @db.Decimal(25, 5)
+  valor_desconto     Decimal      @db.Decimal(25, 5)
+  valor_total        Decimal      @db.Decimal(25, 5)
+  quantidade         Decimal      @db.Decimal(25, 5)
+  tipo_desconto      TipoDesconto
+  cod_orcamento      Int
+
+  db_orcamentos db_orcamentos @relation(fields: [cod_orcamento], references: [cod_orcamento], onDelete: NoAction, onUpdate: NoAction)
+  db_servicos   db_servicos   @relation(fields: [cod_servico], references: [cod_servico])
+
+  @@index([cod_servico], name: "idx_orc_serv_idx")
+}
+
+model db_clientes {
+  cod_cliente                 Int                           @id @default(autoincrement())
+  nome                        String?                       @db.VarChar(100)
+  logradouro                  String?                       @db.VarChar(100)
+  cidade                      String?                       @db.VarChar(100)
+  bairro                      String?                       @db.VarChar(100)
+  estado                      String?                       @db.VarChar(2)
+  complemento                 String?                       @db.VarChar(100)
+  numero                      Int?
+  cep                         String?                       @db.VarChar(15)
+  dt_hr_criacao               DateTime?                     @db.DateTime(0)
+  email                       String?                       @db.VarChar(100)
+  telefone                    String?                       @db.VarChar(15)
+  celular                     String?                       @db.VarChar(15)
+  documento                   String?                       @db.VarChar(18)
+  insc_estadual               String?                       @db.VarChar(45)
+  insc_municipal              String?                       @db.VarChar(45)
+  situacao                    db_clientes_situacao?
+  tipo                        db_clientes_tipo?
+  db_estabelecimentos_cliente db_estabelecimentos_cliente[]
+
+  // Adicionado o relacionamento com db_pedidos_venda
+  db_pedidos_venda db_pedidos_venda[]
+}
+
+model db_estabelecimentos_transportadora {
+  cod_estabel_transp  Int                  @id @default(autoincrement())
+  cod_transportadora  Int
+  cod_estabel         Int
+  db_transportadoras  db_transportadoras?  @relation(fields: [cod_transportadora], references: [cod_transportadora], onDelete: NoAction, onUpdate: NoAction, map: "cod_transp_estabel_idx_ec")
+  db_estabelecimentos db_estabelecimentos? @relation(fields: [cod_estabel], references: [cod_estabelecimento], onDelete: NoAction, onUpdate: NoAction, map: "cod_estabel_transp_idx_ec")
+
+  @@index([cod_estabel], map: "idx_estabel_transp_idx")
+  @@index([cod_transportadora], map: "idx_transp_estabel_idx")
+}
+
+model db_transportadoras {
+  cod_transportadora                 Int                                  @id @default(autoincrement())
+  nome                               String                               @db.VarChar(45)
+  tipo                               Tipo
+  telefone                           String                               @db.VarChar(15)
+  celular                            String                               @db.VarChar(15)
+  responsavel                        String                               @db.VarChar(45)
+  email                              String                               @db.VarChar(100)
+  observacoes                        String                               @db.VarChar(45)
+  logradouro                         String                               @db.VarChar(100)
+  cidade                             String                               @db.VarChar(100)
+  bairro                             String                               @db.VarChar(100)
+  estado                             String                               @db.VarChar(2)
+  complemento                        String?                              @db.VarChar(45)
+  numero                             Int
+  cep                                String                               @db.VarChar(15)
+  dtCadastro                         DateTime?                            @db.DateTime(0)
+  situacao                           Situacao                             @default(Ativo)
+  insc_estadual                      String?                              @db.VarChar(45)
+  insc_municipal                     String?                              @db.VarChar(45)
+  documento                          String?                              @db.VarChar(18)
+  db_estabelecimentos_transportadora db_estabelecimentos_transportadora[] // Relacionamento com outra tabela
+}
+
+model db_fornecedores {
+  cod_fornecedor Int       @id @default(autoincrement())
+  nome           String    @db.VarChar(45)
+  tipo           Tipo
+  telefone       String    @db.VarChar(15)
+  celular        String    @db.VarChar(15)
+  responsavel    String    @db.VarChar(45)
+  email          String    @db.VarChar(100)
+  observacoes    String    @db.VarChar(255)
+  logradouro     String    @db.VarChar(100)
+  cidade         String    @db.VarChar(100)
+  bairro         String    @db.VarChar(100)
+  estado         String    @db.VarChar(2)
+  complemento    String?   @db.VarChar(45)
+  numero         Int
+  cep            String    @db.VarChar(15)
+  dtCadastro     DateTime? @db.DateTime(0)
+  situacao       Situacao  @default(Ativo)
+  insc_estadual  String?   @db.VarChar(45)
+  insc_municipal String?   @db.VarChar(45)
+  documento      String?   @db.VarChar(18)
+
+  db_estabelecimentos_fornecedor db_estabelecimentos_fornecedor[]
+}
+
+model db_estabelecimentos_fornecedor {
+  cod_estabel_forn Int @id @default(autoincrement())
+  cod_fornecedor   Int
+  cod_estabel      Int
+
+  db_fornecedores     db_fornecedores?     @relation(fields: [cod_fornecedor], references: [cod_fornecedor], onDelete: NoAction, onUpdate: NoAction, map: "cod_forn_estabel_idx_ec")
+  db_estabelecimentos db_estabelecimentos? @relation(fields: [cod_estabel], references: [cod_estabelecimento], onDelete: NoAction, onUpdate: NoAction, map: "cod_estabel_forn_idx_ec")
+
+  @@index([cod_estabel], map: "idx_estabel_forn_idx")
+  @@index([cod_fornecedor], map: "idx_forn_estabel_idx")
+  @@map("db_estabelecimentos_fornecedor")
+}
+
+enum Tipo {
+  PessoaFisica
+  PessoaJuridica
+}
+
+model db_estabelecimentos {
+  cod_estabelecimento                Int                                  @id @default(autoincrement())
+  nome                               String?                              @db.VarChar(100)
+  logradouro                         String?                              @db.VarChar(100)
+  cidade                             String?                              @db.VarChar(100)
+  bairro                             String?                              @db.VarChar(100)
+  estado                             String?                              @db.VarChar(2)
+  complemento                        String?                              @db.VarChar(100)
+  numero                             Int?
+  cep                                String?                              @db.VarChar(15)
+  dt_hr_criacao                      DateTime?                            @db.DateTime(0)
+  db_estabelecimentos_cliente        db_estabelecimentos_cliente[]
+  db_estabelecimentos_item           db_estabelecimentos_item[]
+  db_estabelecimentos_usuario        db_estabelecimentos_usuario[]
+  db_estabelecimentos_transportadora db_estabelecimentos_transportadora[]
+  situacao                           Situacao                             @default(Ativo)
+
+  db_estabelecimentos_fornecedor db_estabelecimentos_fornecedor[] @relation(map: "cod_estabel_forn_idx_ec")
+
+  db_estabelecimentos_natureza db_estabelecimentos_natureza[] @relation(map: "idx_cod_estabel_en")
+
+  db_estabelecimentos_atividades db_estabelecimentos_atividades[] @relation(map: "idx_cod_estabel_ea")
+
+  db_depositos db_depositos[]
+}
+
+model db_servicos {
+  cod_servico Int       @id @default(autoincrement())
+  nome        String    @db.VarChar(45)
+  descricao   String?   @db.VarChar(255)
+  valor_venda Decimal   @db.Decimal(10, 5)
+  valor_custo Decimal   @db.Decimal(10, 5)
+  comissao    Decimal?  @db.Decimal(10, 5)
+  dtCadastro  DateTime? @db.DateTime(0)
+  situacao    Situacao  @default(Ativo)
+
+  db_servicos_orcamento           db_servicos_orcamento[]
+  db_servicos_estrutura_orcamento db_servicos_estrutura_orcamento[]
+}
+
+model db_centros_custo {
+  cod_centro_custo Int      @id @default(autoincrement())
+  nome             String   @db.VarChar(45)
+  descricao        String?  @db.VarChar(255)
+  situacao         Situacao @default(Ativo)
+
+  db_contas_financeiro db_contas_financeiro[]
+}
+
+model db_estabelecimentos_cliente {
+  cod_estabelecimento_cliente Int                  @id @default(autoincrement())
+  cod_estabel                 Int?
+  cod_cliente                 Int?
+  db_clientes                 db_clientes?         @relation(fields: [cod_cliente], references: [cod_cliente], onDelete: NoAction, onUpdate: NoAction, map: "cod_cliente_idx_ec")
+  db_estabelecimentos         db_estabelecimentos? @relation(fields: [cod_estabel], references: [cod_estabelecimento], onDelete: NoAction, onUpdate: NoAction, map: "cod_estabel_idx_ec")
+
+  @@index([cod_cliente], map: "cod_cliente_idx")
+  @@index([cod_estabel], map: "cod_estabel_idx_idx")
+}
+
+model db_estabelecimentos_item {
+  cod_estabel_item    Int                  @id @default(autoincrement())
+  cod_item            Int?
+  cod_estabel         Int?
+  db_estabelecimentos db_estabelecimentos? @relation(fields: [cod_estabel], references: [cod_estabelecimento], onDelete: NoAction, onUpdate: NoAction, map: "cod_estabel_idx_ei")
+  db_itens            db_itens?            @relation(fields: [cod_item], references: [cod_item], onDelete: NoAction, onUpdate: NoAction, map: "cod_item_idx_ei")
+
+  @@index([cod_estabel], map: "cod_estabel_idx_idx")
+  @@index([cod_item], map: "cod_item_idx_idx")
+}
+
+model db_estabelecimentos_usuario {
+  cod_estabel_usuario Int                  @id @default(autoincrement())
+  cod_usuario         Int?
+  cod_estabel         Int?
+  db_estabelecimentos db_estabelecimentos? @relation(fields: [cod_estabel], references: [cod_estabelecimento], onDelete: NoAction, onUpdate: NoAction, map: "idx_cod_estabel_eu")
+  db_usuarios         db_usuarios?         @relation(fields: [cod_usuario], references: [cod_usuario], onDelete: NoAction, onUpdate: NoAction, map: "idx_cod_usuario_eu")
+
+  @@index([cod_estabel], map: "idx_cod_estabel_idx")
+  @@index([cod_usuario], map: "idx_cod_usuario_idx")
+}
+
+model db_familias {
+  cod_familia Int        @id @default(autoincrement())
+  nome        String?    @db.VarChar(45)
+  descricao   String?    @db.VarChar(100)
+  db_itens    db_itens[]
+  situacao    Situacao   @default(Ativo)
+}
+
+model db_grupos {
+  cod_grupo           Int                   @id @default(autoincrement())
+  nome                String?               @db.VarChar(45)
+  dt_hr_criacao       DateTime?             @db.DateTime(0)
+  db_permissoes_grupo db_permissoes_grupo[]
+  db_usuarios         db_usuarios[]
+  situacao            Situacao
+}
+
+model db_itens {
+  cod_item                        Int                               @id @default(autoincrement())
+  codigo                          String?                           @db.VarChar(45)
+  descricao                       String?                           @db.VarChar(255)
+  narrativa                       String?                           @db.Text
+  cod_un                          Int?
+  situacao                        db_itens_situacao?
+  dt_hr_criacao                   DateTime?                         @db.DateTime(0)
+  cod_familia                     Int?
+  anexo                           String?                           @db.Text
+  valor_venda                     Decimal?                          @default(25.5)
+  valor_custo                     Decimal?                          @default(25.5)
+  db_estabelecimentos_item        db_estabelecimentos_item[]
+  db_produtos_orcamento           db_produtos_orcamento[]
+  db_familias                     db_familias?                      @relation(fields: [cod_familia], references: [cod_familia], onDelete: NoAction, onUpdate: NoAction, map: "cod_familia_idx_item")
+  db_unidades_medida              db_unidades_medida?               @relation(fields: [cod_un], references: [cod_un], onDelete: NoAction, onUpdate: NoAction, map: "cod_un_idx_item")
+  db_produtos_estrutura_orcamento db_produtos_estrutura_orcamento[]
+  db_produtos_nf                  db_produtos_nf[]
+  db_locais_itens                 db_locais_itens[]
+  db_movimentacoes                db_movimentacoes[]                @relation("ItemMovimentacoes")
+
+  @@index([cod_familia], map: "cod_familia_idx_idx")
+  @@index([cod_un], map: "cod_un_idx_idx")
+}
+
+model db_modulos {
+  cod_modulo          Int                   @id @default(autoincrement())
+  descricao           String?               @db.VarChar(45)
+  cod_modulo_pai      Int?
+  dt_hr_criacao       DateTime?             @db.DateTime(0)
+  db_permissoes_grupo db_permissoes_grupo[]
+  situacao            Situacao              @default(Ativo)
+
+  @@index([cod_modulo_pai], map: "idx_cod_modulo_pai")
+}
+
+model db_permissoes_grupo {
+  cod_permissao_grupo Int                               @id @default(autoincrement())
+  cod_grupo           Int?
+  cod_modulo          Int?
+  insercao            db_permissoes_grupo_insercao?
+  edicao              db_permissoes_grupo_edicao?
+  delecao             db_permissoes_grupo_delecao?
+  visualizacao        db_permissoes_grupo_visualizacao?
+  dt_hr_criacao       DateTime?                         @db.DateTime(0)
+  db_grupos           db_grupos?                        @relation(fields: [cod_grupo], references: [cod_grupo], onDelete: NoAction, onUpdate: NoAction, map: "idx_cod_grupo_permissao")
+  db_modulos          db_modulos?                       @relation(fields: [cod_modulo], references: [cod_modulo], onDelete: NoAction, onUpdate: NoAction, map: "idx_cod_modulo_permissao")
+  situacao            Situacao                          @default(Ativo)
+
+  @@index([cod_grupo], map: "idx_cod_grupo_idx")
+  @@index([cod_modulo], map: "idx_cod_modulo_idx")
+}
+
+model db_tokens_usuarios {
+  cod_token     Int          @id @default(autoincrement())
+  token         String?      @db.VarChar(6)
+  cod_usuario   Int?
+  dt_hr_criacao DateTime?    @db.DateTime(0)
+  dt_hr_limite  DateTime?    @db.DateTime(0)
+  db_usuarios   db_usuarios? @relation(fields: [cod_usuario], references: [cod_usuario], onDelete: NoAction, onUpdate: NoAction, map: "idx_cod_usuario_token")
+
+  @@index([cod_usuario], map: "idx_cod_usuario_idx")
+}
+
+model db_unidades_medida {
+  cod_un    Int        @id @default(autoincrement())
+  un        String?    @db.VarChar(10)
+  descricao String?    @db.VarChar(45)
+  db_itens  db_itens[]
+  situacao  Situacao   @default(Ativo)
+
+  db_localizacoes db_localizacoes[]
+
+  db_locais_itens db_locais_itens[]
+
+  db_movimentacoes db_movimentacoes[] @relation("UnidadeMedidaMovimentacoes")
+}
+
+model db_usuarios {
+  cod_usuario                 Int                           @id @default(autoincrement())
+  nome                        String?                       @db.VarChar(100)
+  usuario                     String?                       @db.VarChar(45)
+  senha                       String?                       @db.VarChar(255)
+  email                       String?                       @db.VarChar(45)
+  situacao                    db_usuarios_situacao?
+  cod_grupo                   Int?
+  dt_hr_criacao               DateTime?                     @db.DateTime(0)
+  db_estabelecimentos_usuario db_estabelecimentos_usuario[]
+  db_tokens_usuarios          db_tokens_usuarios[]
+  db_grupos                   db_grupos?                    @relation(fields: [cod_grupo], references: [cod_grupo], onDelete: NoAction, onUpdate: NoAction, map: "idx_cod_grupo_usuario")
+  db_estrutura_orcamento      db_estrutura_orcamento[]
+
+  // Adicionado o relacionamento com db_pedidos_venda
+  db_pedidos_venda     db_pedidos_venda[]
+  db_grupos_tributacao db_grupos_tributacao[]
+  db_depositos         db_depositos[]
+  db_localizacoes      db_localizacoes[]
+  db_locais_itens      db_locais_itens[]
+  db_movimentacoes     db_movimentacoes[]     @relation("UsuarioMovimentacoes")
+
+  @@index([cod_grupo], map: "idx_cod_grupo_idx")
+}
+
+enum db_permissoes_grupo_insercao {
+  SIM
+  N_O @map("NÃO")
+}
+
+enum db_itens_situacao {
+  ATIVO
+  DESATIVADO
+}
+
+enum db_permissoes_grupo_edicao {
+  SIM
+  N_O @map("NÃO")
+}
+
+enum db_permissoes_grupo_delecao {
+  SIM
+  N_O @map("NÃO")
+}
+
+enum db_usuarios_situacao {
+  ATIVO
+  DESATIVADO
+}
+
+enum db_permissoes_grupo_visualizacao {
+  SIM
+  N_O @map("NÃO")
+}
+
+enum db_clientes_situacao {
+  ATIVO
+  DESATIVADO
+}
+
+enum db_clientes_tipo {
+  Pessoa_Jur_dica @map("Pessoa Jurídica")
+  Pessoa_F_sica   @map("Pessoa Física")
+  Estrangeiro
+}

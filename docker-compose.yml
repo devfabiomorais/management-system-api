@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  mysql-portal:
+    image: mysql:8.0
+    container_name: mysql-portal
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: portal
+    volumes:
+      - mysql-portal-data:/var/lib/mysql
+
+volumes:
+  mysql-portal-data:
