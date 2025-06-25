@@ -6,9 +6,9 @@ import {
   registerNfsServico,
   updateNfsServico,
   cancelNfsServico,
-  gerarXmlNFSeController,
-  emitirNfseHandler,
-  NFSeController
+  // gerarXmlNFSeController,
+  // emitirNfseHandler,
+  // NFSeController
 } from '../controllers/nfsServicos.js';
 
 import auth from '../middleware/auth.js';
@@ -18,9 +18,9 @@ router.post('/register', auth, registerNfsServico);
 router.put('/edit/:id', auth, updateNfsServico);
 router.put('/cancel/:id', auth, cancelNfsServico);
 
-router.post('/gerar-xml', auth, gerarXmlNFSeController);
-router.post('/emitir-nfse', auth, emitirNfseHandler);
-router.post('/gerar-pdf', auth, NFSeController.gerarPDF);
+// router.post('/gerar-xml', auth, gerarXmlNFSeController);
+// router.post('/emitir-nfse', auth, emitirNfseHandler);
+// router.post('/gerar-pdf', auth, NFSeController.gerarPDF);
 
 
 export default router;

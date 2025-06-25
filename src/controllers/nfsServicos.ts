@@ -1,99 +1,99 @@
 import { Request, Response } from 'express';
 import { PrismaClient, Situacao } from '@prisma/client';
-import { gerarXmlNFSe } from '../services/NFSe/gerarXmlNFSe.js';
-import { assinarXml } from '../services/NFSe/assinar-xml.js'
-import { main } from '../services/NFSe/envio-soap.js'
+// import { gerarXmlNFSe } from '../services/NFSe/gerarXmlNFSe.js';
+// import { assinarXml } from '../services/NFSe/assinar-xml.js'
+// import { main } from '../services/NFSe/envio-soap.js'
 import path from 'path';
 import fs from 'fs';
 import { gerarDanfsPdf } from '../services/NFSe/PDF/gerarDanfsPdf.js';
 
 const prisma = new PrismaClient();
 
-export class NFSeController {
-  static async gerarPDF(req: Request, res: Response) {
-    try {
-      const { xml } = req.body;
+// export class NFSeController {
+//   static async gerarPDF(req: Request, res: Response) {
+//     try {
+//       const { xml } = req.body;
 
-      if (!xml) {
-        return res.status(400).json({ error: 'XML não fornecido.' });
-      }
+//       if (!xml) {
+//         return res.status(400).json({ error: 'XML não fornecido.' });
+//       }
 
-      // Caminho temporário onde o PDF será salvo
-      const outputPath = `./tmp/danfse-${Date.now()}.pdf`;
+//       // Caminho temporário onde o PDF será salvo
+//       const outputPath = `./tmp/danfse-${Date.now()}.pdf`;
 
-      await gerarDanfsPdf(xml, outputPath);
+//       await gerarDanfsPdf(xml, outputPath);
 
-      // Lê o arquivo gerado
-      const pdfBuffer = fs.readFileSync(outputPath);
+//       // Lê o arquivo gerado
+//       const pdfBuffer = fs.readFileSync(outputPath);
 
-      // Exclui o arquivo temporário após enviar
-      fs.unlinkSync(outputPath);
+//       // Exclui o arquivo temporário após enviar
+//       fs.unlinkSync(outputPath);
 
-      // Define os headers e envia o PDF como resposta
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'inline; filename=danfse.pdf');
-      res.send(pdfBuffer);
-    } catch (error) {
-      console.error('"controllers/nfsServicos/NFSeController{gerarPDF}": Erro ao gerar DANFSe PDF:', error);
-      res.status(500).json({ error: '"controllers/nfsServicos/NFSeController{gerarPDF}": Erro ao gerar o DANFSe PDF.' });
-    }
-  }
-}
+//       // Define os headers e envia o PDF como resposta
+//       res.setHeader('Content-Type', 'application/pdf');
+//       res.setHeader('Content-Disposition', 'inline; filename=danfse.pdf');
+//       res.send(pdfBuffer);
+//     } catch (error) {
+//       console.error('"controllers/nfsServicos/NFSeController{gerarPDF}": Erro ao gerar DANFSe PDF:', error);
+//       res.status(500).json({ error: '"controllers/nfsServicos/NFSeController{gerarPDF}": Erro ao gerar o DANFSe PDF.' });
+//     }
+//   }
+// }
 
-export async function emitirNfseHandler(req: Request, res: Response) {
-  try {
-    const { xml } = req.body;  // espera que o front envie { xml: 'conteúdo XML...' }
-    if (!xml) {
-      return res.status(400).json({ error: 'XML não foi enviado no corpo da requisição.' });
-    }
+// export async function emitirNfseHandler(req: Request, res: Response) {
+//   try {
+//     const { xml } = req.body;  // espera que o front envie { xml: 'conteúdo XML...' }
+//     if (!xml) {
+//       return res.status(400).json({ error: 'XML não foi enviado no corpo da requisição.' });
+//     }
 
-    const caminhoChavePem = path.resolve('./src/services/NFSe/chave_privada.pem');
-    const caminhoCertificadoPem = path.resolve('./src/services/NFSe/certificado_publico.pem');
-    const caminhoSaida = path.resolve('./src/services/NFSe/xmls/xml-assinado/xml-assinado.xml');
+//     const caminhoChavePem = path.resolve('./src/services/NFSe/chave_privada.pem');
+//     const caminhoCertificadoPem = path.resolve('./src/services/NFSe/certificado_publico.pem');
+//     const caminhoSaida = path.resolve('./src/services/NFSe/xmls/xml-assinado/xml-assinado.xml');
 
-    // Passo 1: Assina o XML
-    assinarXml(xml, caminhoChavePem, caminhoCertificadoPem, caminhoSaida);
+//     // Passo 1: Assina o XML
+//     assinarXml(xml, caminhoChavePem, caminhoCertificadoPem, caminhoSaida);
 
-    // Passo 2: Chama o fluxo completo de envio
-    await main();
+//     // Passo 2: Chama o fluxo completo de envio
+//     await main();
 
-    // Passo 3: Lê o XML de resposta da saída (opcional, mas útil para devolver)
-    const caminhoRespostaSaida = path.resolve('./src/services/NFSe/xmls/xml-saida/resposta-nfd-saida.xml');
-    const respostaSaidaXml = fs.readFileSync(caminhoRespostaSaida, 'utf8');
+//     // Passo 3: Lê o XML de resposta da saída (opcional, mas útil para devolver)
+//     const caminhoRespostaSaida = path.resolve('./src/services/NFSe/xmls/xml-saida/resposta-nfd-saida.xml');
+//     const respostaSaidaXml = fs.readFileSync(caminhoRespostaSaida, 'utf8');
 
-    // Retorna ao front a confirmação e o XML de resposta
-    if (respostaSaidaXml.includes('Erro')) {
-      return res.status(400).json({
-        message: 'Erro ao emitir NFS-e.',
-        xmlResposta: respostaSaidaXml,
-        caminhoResposta: caminhoRespostaSaida
-      });
-    }
+//     // Retorna ao front a confirmação e o XML de resposta
+//     if (respostaSaidaXml.includes('Erro')) {
+//       return res.status(400).json({
+//         message: 'Erro ao emitir NFS-e.',
+//         xmlResposta: respostaSaidaXml,
+//         caminhoResposta: caminhoRespostaSaida
+//       });
+//     }
 
-    return res.status(200).json({
-      message: 'NFS-e emitida com sucesso!',
-      xmlResposta: respostaSaidaXml,
-      caminhoResposta: caminhoRespostaSaida
-    });
-
-
-  } catch (error: any) {
-    console.error('Erro ao emitir NFS-e:', error);
-    return res.status(500).json({ error: error.message || 'Erro interno no servidor' });
-  }
-}
+//     return res.status(200).json({
+//       message: 'NFS-e emitida com sucesso!',
+//       xmlResposta: respostaSaidaXml,
+//       caminhoResposta: caminhoRespostaSaida
+//     });
 
 
-export const gerarXmlNFSeController = (req: Request, res: Response) => {
-  try {
-    const dadosNFSe = req.body;
-    const xml = gerarXmlNFSe(dadosNFSe);
-    res.type('application/xml').send(xml);
-  } catch (error) {
-    console.error('Erro ao gerar XML:', error);
-    res.status(500).json({ erro: 'Erro ao gerar XML da NFSe' });
-  }
-};
+//   } catch (error: any) {
+//     console.error('Erro ao emitir NFS-e:', error);
+//     return res.status(500).json({ error: error.message || 'Erro interno no servidor' });
+//   }
+// }
+
+
+// export const gerarXmlNFSeController = (req: Request, res: Response) => {
+//   try {
+//     const dadosNFSe = req.body;
+//     const xml = gerarXmlNFSe(dadosNFSe);
+//     res.type('application/xml').send(xml);
+//   } catch (error) {
+//     console.error('Erro ao gerar XML:', error);
+//     res.status(500).json({ erro: 'Erro ao gerar XML da NFSe' });
+//   }
+// };
 
 
 export const getAllNfsServicos = async (req: Request, res: Response): Promise<void> => {

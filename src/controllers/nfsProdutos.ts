@@ -1,102 +1,102 @@
 import { Request, Response } from 'express';
 import { PrismaClient, Situacao } from '@prisma/client';
-import { gerarXmlNFe } from '../services/NFe/gerarXmlNFe.js';
-import { assinarXml } from '../services/NFe/assinar-xml.js';
+// import { gerarXmlNFe } from '../services/NFe/gerarXmlNFe.js';
+// import { assinarXml } from '../services/NFe/assinar-xml.js';
 import path from 'path';
 import fs from 'fs';
-import { enviarNFe } from '../services/NFe/emitir-nfe.js';
+// import { enviarNFe } from '../services/NFe/emitir-nfe.js';
 import { gerarDanfePdf } from '../services/NFe/PDF/gerarDanfePdf.js';
-import { consultarNota } from '../services/NFe/consultar-nfe.js';
-import { unirXmls } from '../services/NFe/nota-final.js';
+// import { consultarNota } from '../services/NFe/consultar-nfe.js';
+// import { unirXmls } from '../services/NFe/nota-final.js';
 
 const prisma = new PrismaClient();
 
-export class NFeController {
-  static async gerarPDF(req: Request, res: Response) {
-    try {
-      const { xml } = req.body;
+// export class NFeController {
+//   static async gerarPDF(req: Request, res: Response) {
+//     try {
+//       const { xml } = req.body;
 
-      if (!xml) {
-        return res.status(400).json({ error: "XML não fornecido." });
-      }
+//       if (!xml) {
+//         return res.status(400).json({ error: "XML não fornecido." });
+//       }
 
-      const outputPath = `./tmp/danfe-${Date.now()}.pdf`;
+//       const outputPath = `./tmp/danfe-${Date.now()}.pdf`;
 
-      await gerarDanfePdf(xml, outputPath);
+//       await gerarDanfePdf(xml, outputPath);
 
-      const pdfBuffer = fs.readFileSync(outputPath);
-      fs.unlinkSync(outputPath);
+//       const pdfBuffer = fs.readFileSync(outputPath);
+//       fs.unlinkSync(outputPath);
 
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", "inline; filename=danfe.pdf");
-      res.send(pdfBuffer);
-    } catch (error) {
-      console.error('"controllers/nfeProdutos/NFeController{gerarPDF}": Erro ao gerar DANFE PDF:', error);
-      res.status(500).json({ error: '"controllers/nfeProdutos/NFeController{gerarPDF}": Erro ao gerar o DANFE PDF.' });
-    }
-  }
-}
+//       res.setHeader("Content-Type", "application/pdf");
+//       res.setHeader("Content-Disposition", "inline; filename=danfe.pdf");
+//       res.send(pdfBuffer);
+//     } catch (error) {
+//       console.error('"controllers/nfeProdutos/NFeController{gerarPDF}": Erro ao gerar DANFE PDF:', error);
+//       res.status(500).json({ error: '"controllers/nfeProdutos/NFeController{gerarPDF}": Erro ao gerar o DANFE PDF.' });
+//     }
+//   }
+// }
 
-export async function emitirNfeHandler(req: Request, res: Response) {
-  try {
-    const { xml } = req.body;
-    if (!xml) {
-      return res.status(400).json({ error: 'XML da NF-e não foi enviado.' });
-    }
+// export async function emitirNfeHandler(req: Request, res: Response) {
+//   try {
+//     const { xml } = req.body;
+//     if (!xml) {
+//       return res.status(400).json({ error: 'XML da NF-e não foi enviado.' });
+//     }
 
-    const caminhoChavePem = path.resolve('./src/services/NFe/chave_privada.pem');
-    const caminhoCertificadoPem = path.resolve('./src/services/NFe/certificado_publico.pem');
-    const caminhoSaida = path.resolve('./src/services/NFe/xmls/xml-assinado/nfe-assinada.xml');
+//     const caminhoChavePem = path.resolve('./src/services/NFe/chave_privada.pem');
+//     const caminhoCertificadoPem = path.resolve('./src/services/NFe/certificado_publico.pem');
+//     const caminhoSaida = path.resolve('./src/services/NFe/xmls/xml-assinado/nfe-assinada.xml');
 
-    // 1. Assina a NF-e
-    assinarXml(xml, caminhoChavePem, caminhoCertificadoPem, caminhoSaida);
-    console.log('📄 XML assinado com sucesso');
+//     // 1. Assina a NF-e
+//     assinarXml(xml, caminhoChavePem, caminhoCertificadoPem, caminhoSaida);
+//     console.log('📄 XML assinado com sucesso');
 
-    // 2. Envia a NF-e assinada
-    const respostaEnvio = await enviarNFe({
-      caminhoXmlAssinado: caminhoSaida,
-      caminhoCertificado: caminhoCertificadoPem,
-      caminhoChave: caminhoChavePem,
-      passphrase: '1234',
-      ambiente: 'homologacao',
-    });
+//     // 2. Envia a NF-e assinada
+//     const respostaEnvio = await enviarNFe({
+//       caminhoXmlAssinado: caminhoSaida,
+//       caminhoCertificado: caminhoCertificadoPem,
+//       caminhoChave: caminhoChavePem,
+//       passphrase: '1234',
+//       ambiente: 'homologacao',
+//     });
 
-    console.log('📨 Envio da NF-e concluído');
+//     console.log('📨 Envio da NF-e concluído');
 
-    // 3. Consulta a NF-e para obter o protocolo
-    await consultarNota();
-    console.log('🔍 Consulta realizada com sucesso');
+//     // 3. Consulta a NF-e para obter o protocolo
+//     await consultarNota();
+//     console.log('🔍 Consulta realizada com sucesso');
 
-    // 4. Une XML assinado com o protocolo para gerar o XML final
-    await unirXmls();
-    console.log('🧾 XML final gerado com sucesso');
+//     // 4. Une XML assinado com o protocolo para gerar o XML final
+//     await unirXmls();
+//     console.log('🧾 XML final gerado com sucesso');
 
-    // Caminho do XML final
-    const caminhoNotaFinal = path.resolve('./src/services/NFe/xmls/xml-nota.xml');
-    const xmlFinal = fs.readFileSync(caminhoNotaFinal, 'utf8');
+//     // Caminho do XML final
+//     const caminhoNotaFinal = path.resolve('./src/services/NFe/xmls/xml-nota.xml');
+//     const xmlFinal = fs.readFileSync(caminhoNotaFinal, 'utf8');
 
-    return res.status(200).json({
-      message: 'NF-e emitida e processada com sucesso!',
-      xmlNotaFinal: xmlFinal,
-    });
-  } catch (error: any) {
-    console.error('Erro ao emitir NF-e:', error);
-    return res.status(500).json({ error: error.message || 'Erro interno no servidor' });
-  }
-}
+//     return res.status(200).json({
+//       message: 'NF-e emitida e processada com sucesso!',
+//       xmlNotaFinal: xmlFinal,
+//     });
+//   } catch (error: any) {
+//     console.error('Erro ao emitir NF-e:', error);
+//     return res.status(500).json({ error: error.message || 'Erro interno no servidor' });
+//   }
+// }
 
-export const gerarXmlNFeController = (req: Request, res: Response) => {
-  try {
-    const dadosNFe = req.body;
-    const xml = gerarXmlNFe(dadosNFe); // agora deve retornar string
-    res.setHeader('Content-Type', 'application/xml');
-    res.send(xml);
+// export const gerarXmlNFeController = (req: Request, res: Response) => {
+//   try {
+//     const dadosNFe = req.body;
+//     const xml = gerarXmlNFe(dadosNFe); // agora deve retornar string
+//     res.setHeader('Content-Type', 'application/xml');
+//     res.send(xml);
 
-  } catch (error) {
-    console.error('Erro ao gerar XML da NFe:', error);
-    res.status(500).json({ erro: 'Erro ao gerar XML da NFe' });
-  }
-};
+//   } catch (error) {
+//     console.error('Erro ao gerar XML da NFe:', error);
+//     res.status(500).json({ erro: 'Erro ao gerar XML da NFe' });
+//   }
+// };
 
 export const getAllNfsProdutos = async (req: Request, res: Response): Promise<void> => {
   try {
